@@ -163,6 +163,11 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pwm0_out>;
 	};
+
+	one-wire-touchscreen {
+		compatible = "one-wire touchscreen";
+		gpios = <&gpf 15 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &sdhci0 {

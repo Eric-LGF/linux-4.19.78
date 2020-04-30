@@ -167,12 +167,12 @@ static struct s3c_fb_pd_win mini6410_lcd_type1_fb_win = {
 
 static struct fb_videomode mini6410_lcd_type1_timing = {
 	/* 7.0" 800x480 */
-	.left_margin	= 8,
-	.right_margin	= 13,
-	.upper_margin	= 7,
-	.lower_margin	= 5,
-	.hsync_len	= 3,
-	.vsync_len	= 1,
+	.left_margin	= 78,
+	.right_margin	= 80,
+	.upper_margin	= 24,
+	.lower_margin	= 22,
+	.hsync_len	= 10,
+	.vsync_len	= 8,
 	.xres		= 800,
 	.yres		= 480,
 };
@@ -258,7 +258,7 @@ static void __init mini6410_map_io(void)
  * 0-9 LCD configuration
  *
  */
-static char mini6410_features_str[12] __initdata = "0";
+static char mini6410_features_str[12] __initdata = "1";
 
 static int __init mini6410_features_setup(char *str)
 {
@@ -308,7 +308,7 @@ static void mini6410_parse_features(
 		}
 	}
 }
-
+extern int backlight_init(int onewire_pin);
 static void __init mini6410_machine_init(void)
 {
 	u32 cs1;
@@ -349,10 +349,13 @@ static void __init mini6410_machine_init(void)
 		(4 << S3C64XX_SROM_BCX__TCOS__SHIFT) |
 		(0 << S3C64XX_SROM_BCX__TACS__SHIFT), S3C64XX_SROM_BC1);
 
-	gpio_request(S3C64XX_GPF(15), "LCD power");
+	// gpio_request(S3C64XX_GPF(15), "LCD power");
 	gpio_request(S3C64XX_GPE(0), "LCD power");
 
 	platform_add_devices(mini6410_devices, ARRAY_SIZE(mini6410_devices));
+
+	printk("********* backlight_init\n");
+	backlight_init(S3C64XX_GPF(15));
 }
 
 MACHINE_START(MINI6410, "MINI6410")
