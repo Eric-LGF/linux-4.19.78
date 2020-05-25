@@ -220,7 +220,7 @@ static struct platform_device mini6410_lcd_powerdev = {
 
 static struct s3c_sdhci_platdata mini6410_hsmmc1_pdata = {
 	.max_width		= 4,
-	.cd_type		= S3C_SDHCI_CD_GPIO,
+	.cd_type		= S3C_SDHCI_CD_PERMANENT,
 	.ext_cd_gpio		= S3C64XX_GPN(10),
 	.ext_cd_gpio_invert	= true,
 };
