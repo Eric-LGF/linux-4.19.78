@@ -111,13 +111,18 @@ static struct mtd_partition mini6410_nand_part[] = {
 	},
 	[1] = {
 		.name	= "kernel",
-		.size	= SZ_2M,
+		.size	= SZ_8M - SZ_2M,
 		.offset	= SZ_1M,
 	},
 	[2] = {
+		.name	= "env",
+		.size	= SZ_1M,
+		.offset	= SZ_8M - SZ_1M,
+	},
+	[3] = {
 		.name	= "rootfs",
 		.size	= MTDPART_SIZ_FULL,
-		.offset	= SZ_1M + SZ_2M,
+		.offset	= SZ_8M,
 	},
 };
 
