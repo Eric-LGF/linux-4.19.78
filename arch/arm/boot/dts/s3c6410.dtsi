@@ -51,4 +51,21 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
+
+	rtc_int_map: rtc-interrupt-map {
+		interrupt-map = <0 &vic1 28>,
+						<1 &vic0 2>;
+		#address-cells = <0>;
+		#size-cells = <0>;
+		#interrupt-cells = <1>;
+	};
+
+	rtc {
+		compatible = "samsung,s3c6410-rtc";
+		reg = <0x7E005000 0x1000>;
+		interrupts = <0>, <1>;
+		interrupt-parent = <&rtc_int_map>;
+		clocks = <&clocks PCLK_RTC>;
+		clock-names = "rtc";
+	};
 };
