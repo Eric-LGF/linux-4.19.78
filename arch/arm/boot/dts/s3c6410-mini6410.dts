@@ -66,6 +66,48 @@
 		};
 	};
 
+	nand-controller {
+		compatible = "samsung,s3c2412-nand";
+		reg = <0x70200000 0x100000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clocks = <&clocks MEM0_NFCON>;
+		clock-names = "nand";
+
+		nand@0 {
+			nand-ecc-mode = "soft";
+			// nand-on-flash-bbt;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0 0x100000>;
+				};
+
+				partition@100000 {
+					label = "kernel";
+					reg = <0x100000 0x600000>;
+				};
+
+				partition@700000 {
+					label = "env";
+					reg = <0x700000 0x100000>;
+				};
+
+				partition@800000 {
+					label = "rootfs";
+					reg = <0x800000 0xF800000>;
+				};
+			};
+		};
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		pinctrl-names = "default";
