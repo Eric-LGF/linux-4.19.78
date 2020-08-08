@@ -296,7 +296,7 @@
 	};
 
 	sd1_cd: sd1-cd {
-		samsung,pins = "gpg-6";
+		samsung,pins = "gpn-10";
 		samsung,pin-function = <EXYNOS_PIN_FUNC_3>;
 		samsung,pin-pud = <S3C64XX_PIN_PULL_UP>;
 	};
