@@ -274,4 +274,13 @@
 		reg = <0x50>;
 		pagesize = <16>;
 	};
+
+	wm8960: codec@1a {
+		compatible = "wlf,wm8960";
+		reg = <0x1a>;
+		clocks = <&clocks 0>;
+		clock-names = "MCLK1";
+		wlf,shared-lrclk;
+		#sound-dai-cells = <0>;
+	};
 };
