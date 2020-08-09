@@ -210,6 +210,18 @@
 		compatible = "one-wire touchscreen";
 		gpios = <&gpf 15 GPIO_ACTIVE_LOW>;
 	};
+
+	adc: adc@7E00B000 {
+		compatible = "samsung,s3c6410-adc";
+		reg = <0x7E00B000 0x1000>;
+		interrupts = <31>;
+		interrupt-parent = <&vic1>;
+		#io-channel-cells = <1>;
+		io-channel-ranges;
+
+		clocks = <&clocks PCLK_TSADC>;
+		clock-names = "adc";
+	};
 };
 
 &sdhci0 {
