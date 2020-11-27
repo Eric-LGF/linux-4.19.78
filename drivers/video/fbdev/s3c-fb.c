@@ -25,8 +25,13 @@
 #include <linux/interrupt.h>
 #include <linux/pm_runtime.h>
 #include <linux/platform_data/video_s3c.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
 
 #include <video/samsung_fimd.h>
+#include <video/videomode.h>
+#include <video/of_display_timing.h>
 
 /* This driver will export a number of framebuffer interfaces depending
  * on the configuration passed in via the platform data. Each fb instance
@@ -220,6 +225,158 @@ struct s3c_fb {
 	unsigned long		 irq_flags;
 	struct s3c_fb_vsync	 vsync_info;
 };
+
+
+
+#define VALID_BPP124 (VALID_BPP(1) | VALID_BPP(2) | VALID_BPP(4))
+#define VALID_BPP1248 (VALID_BPP124 | VALID_BPP(8))
+
+static struct s3c_fb_win_variant s3c_fb_data_64xx_wins[] = {
+	[0] = {
+		.has_osd_c	= 1,
+		.osd_size_off	= 0x8,
+		.palette_sz	= 256,
+		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
+				   VALID_BPP(18) | VALID_BPP(24)),
+	},
+	[1] = {
+		.has_osd_c	= 1,
+		.has_osd_d	= 1,
+		.osd_size_off	= 0xc,
+		.has_osd_alpha	= 1,
+		.palette_sz	= 256,
+		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
+				   VALID_BPP(18) | VALID_BPP(19) |
+				   VALID_BPP(24) | VALID_BPP(25) |
+				   VALID_BPP(28)),
+	},
+	[2] = {
+		.has_osd_c	= 1,
+		.has_osd_d	= 1,
+		.osd_size_off	= 0xc,
+		.has_osd_alpha	= 1,
+		.palette_sz	= 16,
+		.palette_16bpp	= 1,
+		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
+				   VALID_BPP(18) | VALID_BPP(19) |
+				   VALID_BPP(24) | VALID_BPP(25) |
+				   VALID_BPP(28)),
+	},
+	[3] = {
+		.has_osd_c	= 1,
+		.has_osd_alpha	= 1,
+		.palette_sz	= 16,
+		.palette_16bpp	= 1,
+		.valid_bpp	= (VALID_BPP124  | VALID_BPP(16) |
+				   VALID_BPP(18) | VALID_BPP(19) |
+				   VALID_BPP(24) | VALID_BPP(25) |
+				   VALID_BPP(28)),
+	},
+	[4] = {
+		.has_osd_c	= 1,
+		.has_osd_alpha	= 1,
+		.palette_sz	= 4,
+		.palette_16bpp	= 1,
+		.valid_bpp	= (VALID_BPP(1) | VALID_BPP(2) |
+				   VALID_BPP(16) | VALID_BPP(18) |
+				   VALID_BPP(19) | VALID_BPP(24) |
+				   VALID_BPP(25) | VALID_BPP(28)),
+	},
+};
+
+static struct s3c_fb_driverdata s3c_fb_data_64xx = {
+	.variant = {
+		.nr_windows	= 5,
+		.vidtcon	= VIDTCON0,
+		.wincon		= WINCON(0),
+		.winmap		= WINxMAP(0),
+		.keycon		= WKEYCON,
+		.osd		= VIDOSD_BASE,
+		.osd_stride	= 16,
+		.buf_start	= VIDW_BUF_START(0),
+		.buf_size	= VIDW_BUF_SIZE(0),
+		.buf_end	= VIDW_BUF_END(0),
+
+		.palette = {
+			[0] = 0x400,
+			[1] = 0x800,
+			[2] = 0x300,
+			[3] = 0x320,
+			[4] = 0x340,
+		},
+
+		.has_prtcon	= 1,
+		.has_clksel	= 1,
+	},
+	.win[0]	= &s3c_fb_data_64xx_wins[0],
+	.win[1]	= &s3c_fb_data_64xx_wins[1],
+	.win[2]	= &s3c_fb_data_64xx_wins[2],
+	.win[3]	= &s3c_fb_data_64xx_wins[3],
+	.win[4]	= &s3c_fb_data_64xx_wins[4],
+};
+
+/* S3C2443/S3C2416 style hardware */
+static struct s3c_fb_driverdata s3c_fb_data_s3c2443 = {
+	.variant = {
+		.nr_windows	= 2,
+		.is_2443	= 1,
+
+		.vidtcon	= 0x08,
+		.wincon		= 0x14,
+		.winmap		= 0xd0,
+		.keycon		= 0xb0,
+		.osd		= 0x28,
+		.osd_stride	= 12,
+		.buf_start	= 0x64,
+		.buf_size	= 0x94,
+		.buf_end	= 0x7c,
+
+		.palette = {
+			[0] = 0x400,
+			[1] = 0x800,
+		},
+		.has_clksel	= 1,
+	},
+	.win[0] = &(struct s3c_fb_win_variant) {
+		.palette_sz	= 256,
+		.valid_bpp	= VALID_BPP1248 | VALID_BPP(16) | VALID_BPP(24),
+	},
+	.win[1] = &(struct s3c_fb_win_variant) {
+		.has_osd_c	= 1,
+		.has_osd_alpha	= 1,
+		.palette_sz	= 256,
+		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
+				   VALID_BPP(18) | VALID_BPP(19) |
+				   VALID_BPP(24) | VALID_BPP(25) |
+				   VALID_BPP(28)),
+	},
+};
+
+static const struct platform_device_id s3c_fb_driver_ids[] = {
+	{
+		.name		= "s3c-fb",
+		.driver_data	= (unsigned long)&s3c_fb_data_64xx,
+	}, {
+		.name		= "s3c2443-fb",
+		.driver_data	= (unsigned long)&s3c_fb_data_s3c2443,
+	},
+	{},
+};
+MODULE_DEVICE_TABLE(platform, s3c_fb_driver_ids);
+
+static const struct dev_pm_ops s3cfb_pm_ops = {
+	SET_SYSTEM_SLEEP_PM_OPS(s3c_fb_suspend, s3c_fb_resume)
+	SET_RUNTIME_PM_OPS(s3c_fb_runtime_suspend, s3c_fb_runtime_resume,
+			   NULL)
+};
+
+
+static const struct of_device_id s3c_fb_of_match[] = {
+	{ .compatible = "samsung,s3c-fb", .data = (void*)&s3c_fb_data_64xx},
+	{ },
+};
+MODULE_DEVICE_TABLE(of, s3c_fb_of_match);
+
 
 /**
  * s3c_fb_validate_win_bpp - validate the bits-per-pixel for this mode.
@@ -1357,6 +1514,72 @@ static void s3c_fb_clear_win(struct s3c_fb *sfb, int win)
 	}
 }
 
+static int s3c_fb_parse_dt(struct platform_device *pdev,
+							struct s3c_fb_platdata **platdata)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *np = pdev->dev.of_node;
+	struct fb_videomode *vtiming;
+	struct s3c_fb_pd_win *win[S3C_FB_MAX_WIN];
+	struct s3c_fb_platdata *pd = 0;
+	struct display_timings *timings;
+	struct videomode vm;
+	int ret;
+	u32 tmp;
+
+	pd = devm_kzalloc(dev, sizeof(*pd), GFP_KERNEL);
+	if (0 == pd) 
+		return -ENOMEM;
+
+	if (0 == (vtiming = devm_kzalloc(dev, sizeof(*vtiming), GFP_KERNEL)))
+		return -ENOMEM;
+
+	if (0 == (win[0] = devm_kzalloc(dev, sizeof(struct s3c_fb_pd_win), GFP_KERNEL)))
+		return -ENOMEM;
+	
+	pd->vtiming = vtiming;
+	pd->win[0] = win[0];
+
+
+	timings = of_get_display_timings(np);
+	if (!timings) {
+		dev_err(dev, "failed to get display timings\n");
+		ret = -EINVAL;
+		goto put_display_node;
+	}
+
+	ret = videomode_from_timings(timings, &vm, 0);
+	if (ret < 0) {
+		goto put_display_node;
+	}
+	ret = fb_videomode_from_videomode(&vm, vtiming);
+	if (ret < 0) {
+		goto put_display_node;
+	}
+
+	pd->vidcon0 = VIDCON0_VIDOUT_RGB | VIDCON0_PNRMODE_RGB;
+	pd->vidcon1 = VIDCON1_INV_HSYNC | VIDCON1_INV_VSYNC;
+
+	if (!of_property_read_u32(np, "max-bpp", &tmp))
+		tmp = 32;
+	win[0]->max_bpp = (unsigned short)tmp;
+	if (!of_property_read_u32(np, "default-bpp", &tmp))
+		tmp = 16;
+	win[0]->default_bpp = (unsigned short)tmp;
+	
+	win[0]->xres = vtiming->xres;
+	win[0]->yres = vtiming->yres;
+
+	pdev->dev.platform_data = pd;
+	*platdata = pd;
+
+	return 0;
+
+put_display_node:
+	of_node_put(np);
+	return ret;
+}
+
 static int s3c_fb_probe(struct platform_device *pdev)
 {
 	const struct platform_device_id *platid;
@@ -1370,7 +1593,21 @@ static int s3c_fb_probe(struct platform_device *pdev)
 	u32 reg;
 
 	platid = platform_get_device_id(pdev);
-	fbdrv = (struct s3c_fb_driverdata *)platid->driver_data;
+	if (0 == platid) {
+		if (dev->of_node) {			
+			fbdrv = of_match_node(s3c_fb_of_match, dev->of_node)->data;
+		} else {
+			dev_err(dev, "get device_id error.");
+			return -EINVAL;
+		}
+	} else
+		fbdrv = (struct s3c_fb_driverdata *)platid->driver_data;
+
+	if (!fbdrv) {
+		dev_err(dev, "get fbdrv error.\n");
+		return -EINVAL;
+	}
+
 
 	if (fbdrv->variant.nr_windows > S3C_FB_MAX_WIN) {
 		dev_err(dev, "too many windows, cannot attach\n");
@@ -1379,8 +1616,18 @@ static int s3c_fb_probe(struct platform_device *pdev)
 
 	pd = dev_get_platdata(&pdev->dev);
 	if (!pd) {
-		dev_err(dev, "no platform data specified\n");
-		return -EINVAL;
+		if (pdev->dev.of_node)
+		{
+			dev_info(dev, "parse_dt\n");
+			ret = s3c_fb_parse_dt(pdev, &pd);
+			if (ret)
+				return ret;
+		}
+		else
+		{
+			dev_err(dev, "no platform data specified\n");
+			return -EINVAL;
+		}
 	}
 
 	sfb = devm_kzalloc(dev, sizeof(*sfb), GFP_KERNEL);
@@ -1416,35 +1663,46 @@ static int s3c_fb_probe(struct platform_device *pdev)
 
 	pm_runtime_enable(sfb->dev);
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	sfb->regs = devm_ioremap_resource(dev, res);
-	if (IS_ERR(sfb->regs)) {
-		ret = PTR_ERR(sfb->regs);
-		goto err_lcd_clk;
+	if (pdev->dev.of_node) {
+		sfb->regs = of_iomap(pdev->dev.of_node, 0);
+	} else {
+		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+		sfb->regs = devm_ioremap_resource(dev, res);
+		if (IS_ERR(sfb->regs)) {
+			ret = PTR_ERR(sfb->regs);
+			goto err_lcd_clk;
+		}
+		dev_dbg(dev, "got res mem %#X, %#X\n", res->start, res->end);
 	}
 
-	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!res) {
-		dev_err(dev, "failed to acquire irq resource\n");
-		ret = -ENOENT;
-		goto err_lcd_clk;
+	if (pdev->dev.of_node) {
+		sfb->irq_no = irq_of_parse_and_map(pdev->dev.of_node, 0);
+	} else {
+		res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+		if (!res) {
+			dev_err(dev, "failed to acquire irq resource\n");
+			ret = -ENOENT;
+			goto err_lcd_clk;
+		}
+		sfb->irq_no = res->start;
+		dev_dbg(dev, "got res irq %d\n", res->start);
 	}
-	sfb->irq_no = res->start;
 	ret = devm_request_irq(dev, sfb->irq_no, s3c_fb_irq,
 			  0, "s3c_fb", sfb);
 	if (ret) {
 		dev_err(dev, "irq request failed\n");
 		goto err_lcd_clk;
 	}
-
-	dev_dbg(dev, "got resources (regs %p), probing windows\n", sfb->regs);
+	
+	dev_dbg(dev, "got resources (regs %pX), probing windows\n", sfb->regs);
 
 	platform_set_drvdata(pdev, sfb);
 	pm_runtime_get_sync(sfb->dev);
 
 	/* setup gpio and output polarity controls */
 
-	pd->setup_gpio();
+	if (pd->setup_gpio)
+		pd->setup_gpio();
 
 	writel(pd->vidcon1, sfb->regs + VIDCON1);
 
@@ -1658,148 +1916,6 @@ static int s3c_fb_runtime_resume(struct device *dev)
 }
 #endif
 
-#define VALID_BPP124 (VALID_BPP(1) | VALID_BPP(2) | VALID_BPP(4))
-#define VALID_BPP1248 (VALID_BPP124 | VALID_BPP(8))
-
-static struct s3c_fb_win_variant s3c_fb_data_64xx_wins[] = {
-	[0] = {
-		.has_osd_c	= 1,
-		.osd_size_off	= 0x8,
-		.palette_sz	= 256,
-		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
-				   VALID_BPP(18) | VALID_BPP(24)),
-	},
-	[1] = {
-		.has_osd_c	= 1,
-		.has_osd_d	= 1,
-		.osd_size_off	= 0xc,
-		.has_osd_alpha	= 1,
-		.palette_sz	= 256,
-		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
-				   VALID_BPP(18) | VALID_BPP(19) |
-				   VALID_BPP(24) | VALID_BPP(25) |
-				   VALID_BPP(28)),
-	},
-	[2] = {
-		.has_osd_c	= 1,
-		.has_osd_d	= 1,
-		.osd_size_off	= 0xc,
-		.has_osd_alpha	= 1,
-		.palette_sz	= 16,
-		.palette_16bpp	= 1,
-		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
-				   VALID_BPP(18) | VALID_BPP(19) |
-				   VALID_BPP(24) | VALID_BPP(25) |
-				   VALID_BPP(28)),
-	},
-	[3] = {
-		.has_osd_c	= 1,
-		.has_osd_alpha	= 1,
-		.palette_sz	= 16,
-		.palette_16bpp	= 1,
-		.valid_bpp	= (VALID_BPP124  | VALID_BPP(16) |
-				   VALID_BPP(18) | VALID_BPP(19) |
-				   VALID_BPP(24) | VALID_BPP(25) |
-				   VALID_BPP(28)),
-	},
-	[4] = {
-		.has_osd_c	= 1,
-		.has_osd_alpha	= 1,
-		.palette_sz	= 4,
-		.palette_16bpp	= 1,
-		.valid_bpp	= (VALID_BPP(1) | VALID_BPP(2) |
-				   VALID_BPP(16) | VALID_BPP(18) |
-				   VALID_BPP(19) | VALID_BPP(24) |
-				   VALID_BPP(25) | VALID_BPP(28)),
-	},
-};
-
-static struct s3c_fb_driverdata s3c_fb_data_64xx = {
-	.variant = {
-		.nr_windows	= 5,
-		.vidtcon	= VIDTCON0,
-		.wincon		= WINCON(0),
-		.winmap		= WINxMAP(0),
-		.keycon		= WKEYCON,
-		.osd		= VIDOSD_BASE,
-		.osd_stride	= 16,
-		.buf_start	= VIDW_BUF_START(0),
-		.buf_size	= VIDW_BUF_SIZE(0),
-		.buf_end	= VIDW_BUF_END(0),
-
-		.palette = {
-			[0] = 0x400,
-			[1] = 0x800,
-			[2] = 0x300,
-			[3] = 0x320,
-			[4] = 0x340,
-		},
-
-		.has_prtcon	= 1,
-		.has_clksel	= 1,
-	},
-	.win[0]	= &s3c_fb_data_64xx_wins[0],
-	.win[1]	= &s3c_fb_data_64xx_wins[1],
-	.win[2]	= &s3c_fb_data_64xx_wins[2],
-	.win[3]	= &s3c_fb_data_64xx_wins[3],
-	.win[4]	= &s3c_fb_data_64xx_wins[4],
-};
-
-/* S3C2443/S3C2416 style hardware */
-static struct s3c_fb_driverdata s3c_fb_data_s3c2443 = {
-	.variant = {
-		.nr_windows	= 2,
-		.is_2443	= 1,
-
-		.vidtcon	= 0x08,
-		.wincon		= 0x14,
-		.winmap		= 0xd0,
-		.keycon		= 0xb0,
-		.osd		= 0x28,
-		.osd_stride	= 12,
-		.buf_start	= 0x64,
-		.buf_size	= 0x94,
-		.buf_end	= 0x7c,
-
-		.palette = {
-			[0] = 0x400,
-			[1] = 0x800,
-		},
-		.has_clksel	= 1,
-	},
-	.win[0] = &(struct s3c_fb_win_variant) {
-		.palette_sz	= 256,
-		.valid_bpp	= VALID_BPP1248 | VALID_BPP(16) | VALID_BPP(24),
-	},
-	.win[1] = &(struct s3c_fb_win_variant) {
-		.has_osd_c	= 1,
-		.has_osd_alpha	= 1,
-		.palette_sz	= 256,
-		.valid_bpp	= (VALID_BPP1248 | VALID_BPP(16) |
-				   VALID_BPP(18) | VALID_BPP(19) |
-				   VALID_BPP(24) | VALID_BPP(25) |
-				   VALID_BPP(28)),
-	},
-};
-
-static const struct platform_device_id s3c_fb_driver_ids[] = {
-	{
-		.name		= "s3c-fb",
-		.driver_data	= (unsigned long)&s3c_fb_data_64xx,
-	}, {
-		.name		= "s3c2443-fb",
-		.driver_data	= (unsigned long)&s3c_fb_data_s3c2443,
-	},
-	{},
-};
-MODULE_DEVICE_TABLE(platform, s3c_fb_driver_ids);
-
-static const struct dev_pm_ops s3cfb_pm_ops = {
-	SET_SYSTEM_SLEEP_PM_OPS(s3c_fb_suspend, s3c_fb_resume)
-	SET_RUNTIME_PM_OPS(s3c_fb_runtime_suspend, s3c_fb_runtime_resume,
-			   NULL)
-};
-
 static struct platform_driver s3c_fb_driver = {
 	.probe		= s3c_fb_probe,
 	.remove		= s3c_fb_remove,
@@ -1807,6 +1923,7 @@ static struct platform_driver s3c_fb_driver = {
 	.driver		= {
 		.name	= "s3c-fb",
 		.pm	= &s3cfb_pm_ops,
+		.of_match_table = s3c_fb_of_match,
 	},
 };
 

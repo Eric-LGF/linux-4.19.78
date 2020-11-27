@@ -194,6 +194,19 @@
 				interrupt-parent = <&pctrl_int_map>;
 			};
 		};
+
+		fimd: fimd-controller@77100000 {
+			compatible = "samsung,s3c-fb";
+			interrupt-parent = <&vic0>;
+			reg = <0x77100000 0x4000>;
+			interrupt-names = "vsync", "fifo", "lcd_sys";
+			interrupts = <30>, <29>, <31>;
+			clocks = <&clocks HCLK_LCD>;
+			clock-names = "lcd";
+			
+			status = "disabled";
+		};
+
 	};
 };
 
