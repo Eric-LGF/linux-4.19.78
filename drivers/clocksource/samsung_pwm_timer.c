@@ -227,8 +227,10 @@ static void samsung_clockevent_resume(struct clock_event_device *cev)
 	samsung_timer_set_divisor(pwm.event_id, pwm.tdiv);
 
 	if (pwm.variant.has_tint_cstat) {
+		u32 cstat = readl(pwm.base + REG_TINT_CSTAT);
 		u32 mask = (1 << pwm.event_id);
-		writel(mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
+		cstat &= 0x1f;
+		writel(cstat | mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
 	}
 }
 
@@ -250,8 +252,10 @@ static irqreturn_t samsung_clock_event_isr(int irq, void *dev_id)
 	struct clock_event_device *evt = dev_id;
 
 	if (pwm.variant.has_tint_cstat) {
+		u32 cstat = readl(pwm.base + REG_TINT_CSTAT);
 		u32 mask = (1 << pwm.event_id);
-		writel(mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
+		cstat &= 0x1f;
+		writel(cstat | mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
 	}
 
 	evt->event_handler(evt);
@@ -288,8 +292,10 @@ static void __init samsung_clockevent_init(void)
 	setup_irq(irq_number, &samsung_clock_event_irq);
 
 	if (pwm.variant.has_tint_cstat) {
+		u32 cstat = readl(pwm.base + REG_TINT_CSTAT);
 		u32 mask = (1 << pwm.event_id);
-		writel(mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
+		cstat &= 0x1f;
+		writel(cstat | mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
 	}
 }
 
