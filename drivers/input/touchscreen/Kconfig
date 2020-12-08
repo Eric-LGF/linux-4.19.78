@@ -15,6 +15,19 @@ config TOUCHSCREEN_PROPERTIES
 	def_tristate INPUT
 	depends on INPUT
 
+config TOUCHSCREEN_1WIRE
+	tristate "Mini6410 1-Wire host and Touch Screen Driver"
+	select HIGH_RES_TIMERS
+	select BACKLIGHT_GENERIC
+	help
+	  Say Y here to enable the 1-Wire host and Touch Screen driver and
+	  backlight driver for FriendlyARM Mini6410 development board.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called mini6410_1wire_host.
+
 config TOUCHSCREEN_88PM860X
 	tristate "Marvell 88PM860x touchscreen"
 	depends on MFD_88PM860X
